@@ -1,0 +1,21 @@
+.venv/
+__pycache__/
+*.py[cod]
+.streamlit/secrets.toml
+
+# Datasets
+data/raw/
+data/processed/*.csv
+data/processed/*.parquet
+
+# Large generated results
+results/*_predictions.csv
+results/model_comparison.csv
+results/multi_window_benchmark.csv
+results/synthetic_anomaly_benchmark.csv
+results/ensemble_event_summary.csv
+results/isolation_forest_anomaly_events.csv
+
+# Temporary files
+*.log
+.DS_Store

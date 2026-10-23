@@ -1,0 +1,74 @@
+{
+  "window_count": 8,
+  "window_size": 3000,
+  "synthetic_anomaly_rows_per_window": 41,
+  "autoencoder_threshold": 1.3358681201934814,
+  "limitations": [
+    "Synthetic anomalies are not real fault labels.",
+    "Electrical measurements are only partially adjusted.",
+    "All windows use the same four injection positions.",
+    "The contextual case uses an empirical hourly reference."
+  ],
+  "models": {
+    "Isolation Forest": {
+      "TP": 15,
+      "FP": 120,
+      "FN": 313,
+      "TN": 23312,
+      "precision": 0.1111,
+      "recall": 0.0457,
+      "F1": 0.0648,
+      "false_positive_rate": 0.0051
+    },
+    "Autoencoder": {
+      "TP": 97,
+      "FP": 168,
+      "FN": 231,
+      "TN": 23264,
+      "precision": 0.366,
+      "recall": 0.2957,
+      "F1": 0.3272,
+      "false_positive_rate": 0.0072
+    },
+    "OR ensemble": {
+      "TP": 97,
+      "FP": 271,
+      "FN": 231,
+      "TN": 23161,
+      "precision": 0.2636,
+      "recall": 0.2957,
+      "F1": 0.2787,
+      "false_positive_rate": 0.0116
+    }
+  },
+  "by_scenario": {
+    "Point spike": {
+      "injected_rows": 8,
+      "windows": 8,
+      "IF_detection_rate": 0.0,
+      "AE_detection_rate": 0.25,
+      "OR_detection_rate": 0.25
+    },
+    "Sustained spike": {
+      "injected_rows": 80,
+      "windows": 8,
+      "IF_detection_rate": 0.0,
+      "AE_detection_rate": 0.1125,
+      "OR_detection_rate": 0.1125
+    },
+    "Stuck-on pattern": {
+      "injected_rows": 160,
+      "windows": 8,
+      "IF_detection_rate": 0.0812,
+      "AE_detection_rate": 0.2062,
+      "OR_detection_rate": 0.2062
+    },
+    "Contextual high usage": {
+      "injected_rows": 80,
+      "windows": 8,
+      "IF_detection_rate": 0.025,
+      "AE_detection_rate": 0.6625,
+      "OR_detection_rate": 0.6625
+    }
+  }
+}

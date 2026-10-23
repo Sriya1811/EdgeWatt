@@ -1,0 +1,15 @@
+MODEL AGREEMENT SUMMARY
+Matched test observations: 409789
+Isolation Forest flagged: 1609
+Autoencoder flagged: 1278
+Flagged by both: 361
+Isolation Forest only: 1248
+Autoencoder only: 917
+Flagged by neither: 407263
+OR ensemble flagged: 2526
+AND ensemble flagged: 361
+Jaccard agreement: 0.1429
+
+OR means either model flags the reading.
+AND means both models flag the reading.
+Neither strategy is confirmed better without labeled evaluation data.

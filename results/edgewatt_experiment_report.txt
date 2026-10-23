@@ -1,0 +1,91 @@
+EDGEWATT EXPERIMENT REPORT
+============================================================
+
+Project: EdgeWatt - Lightweight ML for Anomalous Energy Usage
+Experiment: Multi-window synthetic anomaly benchmark
+
+EVALUATION SETUP
+------------------------------------------------------------
+Contiguous windows: 8
+Rows scored: 23760
+Window size: 3000
+Autoencoder threshold: 1.3358681201934814
+
+IMPORTANT LIMITATION
+------------------------------------------------------------
+These metrics evaluate injected synthetic anomalies only.
+They are not verified real-world fault-detection metrics.
+
+OVERALL MODEL METRICS
+------------------------------------------------------------
+
+Isolation Forest
+  TP: 15
+  FP: 120
+  FN: 313
+  TN: 23312
+  precision: 0.1111
+  recall: 0.0457
+  F1: 0.0648
+  false_positive_rate: 0.0051
+
+Autoencoder
+  TP: 97
+  FP: 168
+  FN: 231
+  TN: 23264
+  precision: 0.366
+  recall: 0.2957
+  F1: 0.3272
+  false_positive_rate: 0.0072
+
+OR ensemble
+  TP: 97
+  FP: 271
+  FN: 231
+  TN: 23161
+  precision: 0.2636
+  recall: 0.2957
+  F1: 0.2787
+  false_positive_rate: 0.0116
+
+SCENARIO-LEVEL DETECTION
+------------------------------------------------------------
+
+Point spike
+  injected_rows: 8
+  windows: 8
+  IF_detection_rate: 0.0
+  AE_detection_rate: 0.25
+  OR_detection_rate: 0.25
+
+Sustained spike
+  injected_rows: 80
+  windows: 8
+  IF_detection_rate: 0.0
+  AE_detection_rate: 0.1125
+  OR_detection_rate: 0.1125
+
+Stuck-on pattern
+  injected_rows: 160
+  windows: 8
+  IF_detection_rate: 0.0812
+  AE_detection_rate: 0.2062
+  OR_detection_rate: 0.2062
+
+Contextual high usage
+  injected_rows: 80
+  windows: 8
+  IF_detection_rate: 0.025
+  AE_detection_rate: 0.6625
+  OR_detection_rate: 0.6625
+
+INTERPRETATION
+------------------------------------------------------------
+The Autoencoder achieved the highest F1-score among the
+evaluated configurations in this synthetic experiment.
+The OR ensemble did not improve recall over the Autoencoder
+and produced more false positives.
+
+Further evaluation using diverse scenarios and verified
+fault labels is required before claiming real-world accuracy.

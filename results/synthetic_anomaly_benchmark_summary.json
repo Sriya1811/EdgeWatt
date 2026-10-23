@@ -1,0 +1,88 @@
+{
+  "benchmark": "Controlled synthetic anomaly experiment",
+  "random_seed": 42,
+  "test_window_start": "2010-02-05 04:29:00",
+  "test_window_end": "2010-02-07 06:28:00",
+  "window_rows": 3000,
+  "synthetic_positive_rows": 41,
+  "scoring_rows": 2970,
+  "scenarios": [
+    {
+      "name": "Point spike",
+      "start": 500,
+      "length": 1,
+      "type": "spike",
+      "factor": 3.0
+    },
+    {
+      "name": "Sustained spike",
+      "start": 1000,
+      "length": 10,
+      "type": "spike",
+      "factor": 2.5
+    },
+    {
+      "name": "Stuck-on pattern",
+      "start": 1500,
+      "length": 20,
+      "type": "stuck",
+      "factor": 2.0
+    },
+    {
+      "name": "Contextual high usage",
+      "start": 2200,
+      "length": 10,
+      "type": "contextual",
+      "factor": 2.5
+    }
+  ],
+  "limitations": [
+    "Synthetic labels are not real fault labels.",
+    "The contextual scenario uses an empirical hourly reference.",
+    "Active power and intensity are adjusted proportionally.",
+    "Reactive power and sub-metering are not physically simulated.",
+    "The benchmark uses one contiguous test window."
+  ],
+  "models": {
+    "Isolation Forest": {
+      "TP": 0,
+      "FP": 63,
+      "FN": 41,
+      "TN": 2866,
+      "synthetic_precision": 0.0,
+      "synthetic_recall": 0.0,
+      "synthetic_F1": 0.0,
+      "synthetic_detection_rate_percent": 0.0
+    },
+    "Autoencoder": {
+      "TP": 20,
+      "FP": 48,
+      "FN": 21,
+      "TN": 2881,
+      "synthetic_precision": 0.2941,
+      "synthetic_recall": 0.4878,
+      "synthetic_F1": 0.367,
+      "synthetic_detection_rate_percent": 48.78
+    },
+    "OR ensemble": {
+      "TP": 20,
+      "FP": 100,
+      "FN": 21,
+      "TN": 2829,
+      "synthetic_precision": 0.1667,
+      "synthetic_recall": 0.4878,
+      "synthetic_F1": 0.2484,
+      "synthetic_detection_rate_percent": 48.78
+    },
+    "AND ensemble": {
+      "TP": 0,
+      "FP": 11,
+      "FN": 41,
+      "TN": 2918,
+      "synthetic_precision": 0.0,
+      "synthetic_recall": 0.0,
+      "synthetic_F1": 0.0,
+      "synthetic_detection_rate_percent": 0.0
+    }
+  }
+}

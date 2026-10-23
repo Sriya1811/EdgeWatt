@@ -1,0 +1,4 @@
+Model,TP,FP,FN,TN,precision,recall,F1,false_positive_rate
+Isolation Forest,15,120,313,23312,0.1111,0.0457,0.0648,0.0051
+Autoencoder,97,168,231,23264,0.366,0.2957,0.3272,0.0072
+OR ensemble,97,271,231,23161,0.2636,0.2957,0.2787,0.0116
