@@ -17,8 +17,8 @@ import plotly.graph_objects as go
 # ---------------------------------------------------------------------
 
 ROOT = Path(__file__).resolve().parents[1]
-FEATURES_CSV = ROOT / "data" / "processed" / "edgewatt_features.csv"
-FEATURES_PARQUET = ROOT / "data" / "processed" / "edgewatt_features.parquet"
+FEATURES_CSV = ROOT / "data" / "processed" / "edgewatt_features_demo.csv"
+FEATURES_PARQUET = ROOT / "data" / "processed" / "edgewatt_features_demo.parquet"
 IF_MODEL = ROOT / "models" / "isolation_forest.joblib"
 AE_MODEL = ROOT / "models" / "edgewatt_autoencoder.keras"
 AE_SCALER = ROOT / "models" / "autoencoder_scaler.joblib"
