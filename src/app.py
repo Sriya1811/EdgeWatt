@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from pathlib import Path
 import time
@@ -68,7 +68,7 @@ def load_full_predictions() -> pd.DataFrame:
 
 st.set_page_config(
     page_title="EdgeWatt | Smart Energy Intelligence",
-    page_icon="âš¡",
+    page_icon="E",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -178,7 +178,7 @@ def choose_chart_data(df: pd.DataFrame, max_points: int = 2500) -> pd.DataFrame:
 
 # ---------------------------- Sidebar --------------------------------
 with st.sidebar:
-    st.markdown("## âš¡ EdgeWatt")
+    st.markdown("## Ã¢Å¡Â¡ EdgeWatt")
     st.caption("Smart-home energy anomaly detection")
     theme = st.selectbox("Appearance", ["Dark", "Light"], index=0)
     period = st.radio(
@@ -255,7 +255,7 @@ except Exception as exc:
 
 data_min = full_df["Timestamp"].min()
 data_max = full_df["Timestamp"].max()
-st.caption(f"Dataset coverage: **{data_min:%d %b %Y} â€“ {data_max:%d %b %Y}** Â· {len(full_df):,} readings")
+st.caption(f"Dataset coverage: **{data_min:%d %b %Y} to {data_max:%d %b %Y}** | {len(full_df):,} readings")
 st.caption(f"Dataset source: {dataset_source}")
 
 now_end = data_max
@@ -327,7 +327,7 @@ if layout == "Overview":
     st.markdown("### At a glance")
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Readings analyzed", f"{len(scored):,}")
-    m2.metric("Average active power", f"{mean_power:.3f} kW" if pd.notna(mean_power) else "â€”")
+    m2.metric("Average active power", f"{mean_power:.3f} kW" if pd.notna(mean_power) else "Ã¢â‚¬â€")
     m3.metric("Candidate anomaly readings", f"{total_anomalies:,}", help="Model flags are candidates, not confirmed faults.")
     m4.metric("Estimated energy", f"{estimated_kwh:,.1f} kWh", help="Approximation: sum of kW readings divided by 60, assuming minute-level samples.")
 
@@ -455,4 +455,4 @@ with st.expander("View analyzed readings and export results"):
     )
 
 st.divider()
-st.caption("EdgeWatt Â· Research prototype Â· Historical UCI household power data Â· Model outputs require validation against labeled events.")
+st.caption("EdgeWatt Ã‚Â· Research prototype Ã‚Â· Historical UCI household power data Ã‚Â· Model outputs require validation against labeled events.")
