@@ -1,13 +1,6 @@
-numpy
+﻿numpy
 pandas
-scikit-learn
-joblib
-tensorflow
 streamlit
 plotly
 pyarrow
-matplotlib
-seaborn
-psutil
-
 huggingface_hub>=1.5,<2.0

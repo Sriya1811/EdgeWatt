@@ -4,7 +4,6 @@ from pathlib import Path
 import time
 import warnings
 
-import joblib
 import numpy as np
 import pandas as pd
 import streamlit as st
@@ -19,11 +18,6 @@ import plotly.graph_objects as go
 ROOT = Path(__file__).resolve().parents[1]
 FEATURES_CSV = ROOT / "data" / "processed" / "edgewatt_features_demo.csv"
 FEATURES_PARQUET = ROOT / "data" / "processed" / "edgewatt_features_demo.parquet"
-IF_MODEL = ROOT / "models" / "isolation_forest.joblib"
-AE_MODEL = ROOT / "models" / "edgewatt_autoencoder.keras"
-AE_SCALER = ROOT / "models" / "autoencoder_scaler.joblib"
-IF_PREDICTIONS = ROOT / "results" / "isolation_forest_test_predictions.csv"
-AE_PREDICTIONS = ROOT / "results" / "autoencoder_test_predictions.csv"
 
 FULL_PREDICTIONS_FILE = "full_dataset_predictions.parquet"
 HF_DATASET_REPO = "Hyndhavichakka/edgewatt-full-dataset"
@@ -71,18 +65,10 @@ def load_full_predictions() -> pd.DataFrame:
     return predictions
 
 
-FEATURE_COLUMNS = [
-    "Global_active_power", "Global_reactive_power", "Voltage",
-    "Global_intensity", "Sub_metering_1", "Sub_metering_2",
-    "Sub_metering_3", "HourSin", "HourCos", "IsWeekend",
-    "Power_Lag_1", "Power_Lag_5", "Rolling_Mean_5",
-    "Rolling_Std_5", "Rolling_Mean_30", "Power_Change",
-    "Power_Relative_Change",
-]
 
 st.set_page_config(
     page_title="EdgeWatt | Smart Energy Intelligence",
-    page_icon="⚡",
+    page_icon="âš¡",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -176,60 +162,6 @@ def load_dataset() -> pd.DataFrame:
     return df, dataset_source
 
 
-@st.cache_resource(show_spinner="Loading anomaly detection models...")
-def load_models():
-    models = {"if": None, "ae": None, "scaler": None, "errors": []}
-    if IF_MODEL.exists():
-        try:
-            models["if"] = joblib.load(IF_MODEL)
-        except Exception as exc:
-            models["errors"].append(f"Isolation Forest could not be loaded: {exc}")
-    if AE_MODEL.exists() and AE_SCALER.exists():
-        try:
-            # Import TensorFlow only when the autoencoder artifacts exist.
-            import tensorflow as tf
-            models["ae"] = tf.keras.models.load_model(AE_MODEL, compile=False)
-            models["scaler"] = joblib.load(AE_SCALER)
-        except Exception as exc:
-            models["errors"].append(f"Autoencoder could not be loaded: {exc}")
-    return models
-
-
-def numeric_features(df: pd.DataFrame) -> pd.DataFrame:
-    missing = [c for c in FEATURE_COLUMNS if c not in df.columns]
-    if missing:
-        raise ValueError("Missing model features: " + ", ".join(missing))
-    x = df[FEATURE_COLUMNS].apply(pd.to_numeric, errors="coerce")
-    return x.replace([np.inf, -np.inf], np.nan).fillna(0.0)
-
-
-def score_rows(df: pd.DataFrame, models: dict, selected_models: str):
-    """Score only the selected date range; keep inference in batches."""
-    result = df.copy()
-    x = numeric_features(result)
-    if selected_models in ("Both models", "Isolation Forest only") and models["if"] is not None:
-        result["IF_Anomaly"] = models["if"].predict(x) == -1
-        try:
-            result["IF_Score"] = -models["if"].score_samples(x)
-        except Exception:
-            result["IF_Score"] = np.nan
-    if selected_models in ("Both models", "Autoencoder only") and models["ae"] is not None:
-        scaled = models["scaler"].transform(x)
-        batch_size = 8192
-        chunks = []
-        for start in range(0, len(scaled), batch_size):
-            reconstructed = models["ae"].predict(
-                scaled[start:start + batch_size], verbose=0
-            )
-            chunks.append(np.mean(np.square(scaled[start:start + batch_size] - reconstructed), axis=1))
-        errors = np.concatenate(chunks) if chunks else np.array([])
-        result["AE_Error"] = errors
-        # Use the stored validation-derived threshold, if available.
-        threshold = 1.335868
-        result["AE_Anomaly"] = errors > threshold
-    return result
-
-
 def choose_chart_data(df: pd.DataFrame, max_points: int = 2500) -> pd.DataFrame:
     """Downsample chart points for responsiveness without changing table/scoring data."""
     if len(df) <= max_points:
@@ -246,7 +178,7 @@ def choose_chart_data(df: pd.DataFrame, max_points: int = 2500) -> pd.DataFrame:
 
 # ---------------------------- Sidebar --------------------------------
 with st.sidebar:
-    st.markdown("## ⚡ EdgeWatt")
+    st.markdown("## âš¡ EdgeWatt")
     st.caption("Smart-home energy anomaly detection")
     theme = st.selectbox("Appearance", ["Dark", "Light"], index=0)
     period = st.radio(
@@ -318,15 +250,12 @@ except Exception as exc:
     st.stop()
 
 
-models = load_models()
-for warning in models["errors"]:
-    st.warning(warning)
 
 # Precomputed predictions are used; model files are not required at runtime.
 
 data_min = full_df["Timestamp"].min()
 data_max = full_df["Timestamp"].max()
-st.caption(f"Dataset coverage: **{data_min:%d %b %Y} – {data_max:%d %b %Y}** · {len(full_df):,} readings")
+st.caption(f"Dataset coverage: **{data_min:%d %b %Y} â€“ {data_max:%d %b %Y}** Â· {len(full_df):,} readings")
 st.caption(f"Dataset source: {dataset_source}")
 
 now_end = data_max
@@ -398,7 +327,7 @@ if layout == "Overview":
     st.markdown("### At a glance")
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Readings analyzed", f"{len(scored):,}")
-    m2.metric("Average active power", f"{mean_power:.3f} kW" if pd.notna(mean_power) else "—")
+    m2.metric("Average active power", f"{mean_power:.3f} kW" if pd.notna(mean_power) else "â€”")
     m3.metric("Candidate anomaly readings", f"{total_anomalies:,}", help="Model flags are candidates, not confirmed faults.")
     m4.metric("Estimated energy", f"{estimated_kwh:,.1f} kWh", help="Approximation: sum of kW readings divided by 60, assuming minute-level samples.")
 
@@ -526,4 +455,4 @@ with st.expander("View analyzed readings and export results"):
     )
 
 st.divider()
-st.caption("EdgeWatt · Research prototype · Historical UCI household power data · Model outputs require validation against labeled events.")
+st.caption("EdgeWatt Â· Research prototype Â· Historical UCI household power data Â· Model outputs require validation against labeled events.")
