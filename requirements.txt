@@ -9,3 +9,5 @@ pyarrow
 matplotlib
 seaborn
 psutil
+
+huggingface_hub>=1.5,<2.0

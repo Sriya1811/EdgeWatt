@@ -25,6 +25,52 @@ AE_SCALER = ROOT / "models" / "autoencoder_scaler.joblib"
 IF_PREDICTIONS = ROOT / "results" / "isolation_forest_test_predictions.csv"
 AE_PREDICTIONS = ROOT / "results" / "autoencoder_test_predictions.csv"
 
+FULL_PREDICTIONS_FILE = "full_dataset_predictions.parquet"
+HF_DATASET_REPO = "Hyndhavichakka/edgewatt-full-dataset"
+
+
+@st.cache_data(show_spinner="Loading saved full-dataset predictions...")
+def load_full_predictions() -> pd.DataFrame:
+    """Download and cache precomputed predictions from Hugging Face."""
+    import os
+    from huggingface_hub import hf_hub_download
+
+    hf_token = st.secrets.get("HF_TOKEN", os.getenv("HF_TOKEN", ""))
+    if not hf_token:
+        raise RuntimeError("HF_TOKEN is not configured.")
+
+    prediction_path = hf_hub_download(
+        repo_id=HF_DATASET_REPO,
+        filename=FULL_PREDICTIONS_FILE,
+        repo_type="dataset",
+        token=hf_token,
+    )
+
+    predictions = pd.read_parquet(prediction_path)
+    required = {
+        "Timestamp",
+        "Global_active_power",
+        "IF_Anomaly",
+        "AE_Error",
+        "AE_Anomaly",
+    }
+    missing = required.difference(predictions.columns)
+    if missing:
+        raise ValueError(
+            "Prediction file is missing columns: " + ", ".join(sorted(missing))
+        )
+
+    predictions["Timestamp"] = pd.to_datetime(
+        predictions["Timestamp"], errors="coerce"
+    )
+    predictions = predictions.dropna(subset=["Timestamp"])
+
+    if predictions["Timestamp"].duplicated().any():
+        raise ValueError("Prediction file contains duplicate timestamps.")
+
+    return predictions
+
+
 FEATURE_COLUMNS = [
     "Global_active_power", "Global_reactive_power", "Voltage",
     "Global_intensity", "Sub_metering_1", "Sub_metering_2",
@@ -76,31 +122,58 @@ def apply_theme(theme: str) -> None:
 
 
 # ---------------------------- Data -----------------------------------
+
 @st.cache_data(show_spinner="Loading energy data (first run may take a little while)...")
 def load_dataset() -> pd.DataFrame:
-    """Read Parquet when available; otherwise read CSV and create a Parquet cache."""
-    if FEATURES_PARQUET.exists():
+    """Load the private full dataset when configured; otherwise use the demo CSV."""
+    import os
+    from huggingface_hub import hf_hub_download
+
+    full_dataset_path = None
+    dataset_source = "Demo dataset"
+
+    # Prefer the full dataset stored in the private Hugging Face repository.
+    try:
+        hf_token = st.secrets.get("HF_TOKEN", os.getenv("HF_TOKEN", ""))
+
+        if hf_token:
+            full_dataset_path = hf_hub_download(
+                repo_id="Hyndhavichakka/edgewatt-full-dataset",
+                filename="edgewatt_features.csv",
+                repo_type="dataset",
+                token=hf_token,
+            )
+    except Exception as exc:
+        st.warning(
+            "Could not download the full dataset from Hugging Face. "
+            "Using the demo dataset instead. "
+            f"Details: {type(exc).__name__}"
+        )
+
+    # Use the full dataset if available; otherwise use the local demo dataset.
+    if full_dataset_path:
+        df = pd.read_csv(full_dataset_path, low_memory=False)
+        dataset_source = "Full Hugging Face dataset"
+    elif FEATURES_PARQUET.exists():
         df = pd.read_parquet(FEATURES_PARQUET)
     elif FEATURES_CSV.exists():
         df = pd.read_csv(FEATURES_CSV, low_memory=False)
-        if "Timestamp" not in df.columns:
-            raise ValueError("The features CSV does not contain a 'Timestamp' column.")
-        # Cache conversion speeds up subsequent application starts/reruns.
-        try:
-            df.to_parquet(FEATURES_PARQUET, index=False)
-        except Exception:
-            pass
     else:
         raise FileNotFoundError(
-            f"Could not find the feature dataset at {FEATURES_CSV}. "
-            "Check that edgewatt_features.csv is in data/processed."
+            "Neither the full Hugging Face dataset nor the local demo dataset "
+            "could be loaded."
         )
 
     if "Timestamp" not in df.columns:
-        raise ValueError("The dataset must contain a 'Timestamp' column.")
+        raise ValueError("The dataset does not contain a 'Timestamp' column.")
+
     df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors="coerce")
-    df = df.dropna(subset=["Timestamp"]).sort_values("Timestamp").reset_index(drop=True)
-    return df
+    df = (
+        df.dropna(subset=["Timestamp"])
+        .sort_values("Timestamp")
+        .reset_index(drop=True)
+    )
+    return df, dataset_source
 
 
 @st.cache_resource(show_spinner="Loading anomaly detection models...")
@@ -211,23 +284,50 @@ st.markdown(
 )
 
 try:
-    full_df = load_dataset()
+    full_df, dataset_source = load_dataset()
 except Exception as exc:
     st.error(f"Dataset loading failed: {exc}")
     st.info("Confirm that data/processed/edgewatt_features.csv exists in your EdgeWatt project.")
     st.stop()
 
+try:
+    predictions = load_full_predictions()
+    prediction_columns = [
+        "Timestamp", "IF_Anomaly", "AE_Error", "AE_Anomaly"
+    ]
+
+    full_df = full_df.merge(
+        predictions[prediction_columns],
+        on="Timestamp",
+        how="left",
+        validate="one_to_one",
+    )
+
+    if full_df[["IF_Anomaly", "AE_Error", "AE_Anomaly"]].isna().any().any():
+        raise ValueError(
+            "Some dataset readings do not have matching predictions."
+        )
+
+    predictions_ready = True
+    st.success(
+        f"Loaded saved predictions for all {len(full_df):,} readings."
+    )
+except Exception as exc:
+    predictions_ready = False
+    st.error(f"Could not load or match full-dataset predictions: {exc}")
+    st.stop()
+
+
 models = load_models()
 for warning in models["errors"]:
     st.warning(warning)
 
-if models["if"] is None and models["ae"] is None:
-    st.error("No trained model could be loaded. Check the files in the models folder.")
-    st.stop()
+# Precomputed predictions are used; model files are not required at runtime.
 
 data_min = full_df["Timestamp"].min()
 data_max = full_df["Timestamp"].max()
 st.caption(f"Dataset coverage: **{data_min:%d %b %Y} – {data_max:%d %b %Y}** · {len(full_df):,} readings")
+st.caption(f"Dataset source: {dataset_source}")
 
 now_end = data_max
 if period == "Last 24 hours":
@@ -259,22 +359,23 @@ if filtered.empty:
     st.warning("No readings were found for this period. Choose a longer time range.")
     st.stop()
 
-MAX_SCORE_ROWS = 100_000
-if len(filtered) > MAX_SCORE_ROWS:
-    st.info(
-        f"This period contains {len(filtered):,} readings. To keep the dashboard responsive, "
-        f"the latest {MAX_SCORE_ROWS:,} readings are scored. Choose a shorter period for complete scoring."
-    )
-    filtered = filtered.tail(MAX_SCORE_ROWS).copy()
 
-with st.spinner(f"Scoring {len(filtered):,} readings..."):
-    started = time.perf_counter()
-    try:
-        scored = score_rows(filtered, models, selected_models)
-    except Exception as exc:
-        st.error(f"Model scoring failed: {exc}")
-        st.stop()
-    scoring_seconds = time.perf_counter() - started
+# Use precomputed predictions for every reading in the selected period.
+# No model inference is needed during dashboard reruns.
+started = time.perf_counter()
+scored = filtered.copy()
+
+if selected_models == "Isolation Forest only":
+    scored = scored.drop(
+        columns=["AE_Anomaly", "AE_Error"], errors="ignore"
+    )
+elif selected_models == "Autoencoder only":
+    scored = scored.drop(
+        columns=["IF_Anomaly"], errors="ignore"
+    )
+
+# Predictions are already calculated; this measures selection/data handling.
+scoring_seconds = time.perf_counter() - started
 
 if "IF_Anomaly" in scored:
     if_anomalies = int(scored["IF_Anomaly"].sum())

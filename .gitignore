@@ -19,3 +19,6 @@ results/isolation_forest_anomaly_events.csv
 # Temporary files
 *.log
 .DS_Store
+
+# Full-dataset predictions are stored on Hugging Face
+results/full_dataset_predictions.parquet
