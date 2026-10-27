@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from pathlib import Path
 import time
@@ -178,7 +178,7 @@ def choose_chart_data(df: pd.DataFrame, max_points: int = 2500) -> pd.DataFrame:
 
 # ---------------------------- Sidebar --------------------------------
 with st.sidebar:
-    st.markdown("## Ã¢Å¡Â¡ EdgeWatt")
+    st.markdown("## EdgeWatt")
     st.caption("Smart-home energy anomaly detection")
     theme = st.selectbox("Appearance", ["Dark", "Light"], index=0)
     period = st.radio(
@@ -455,4 +455,4 @@ with st.expander("View analyzed readings and export results"):
     )
 
 st.divider()
-st.caption("EdgeWatt Ã‚Â· Research prototype Ã‚Â· Historical UCI household power data Ã‚Â· Model outputs require validation against labeled events.")
+st.caption("EdgeWatt | Research prototype | Historical UCI household power data | Model outputs require validation against labeled events.")
